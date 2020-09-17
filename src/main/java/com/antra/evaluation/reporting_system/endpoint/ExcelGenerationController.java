@@ -15,6 +15,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.sound.midi.SysexMessage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -34,16 +35,19 @@ public class ExcelGenerationController {
 
     @PostMapping("/excel")
     @ApiOperation("Generate Excel")
-    public ResponseEntity<ExcelResponse> createExcel(@RequestBody @Validated ExcelRequest request) {
+    public ResponseEntity<ExcelResponse> createExcel(@RequestBody @Validated ExcelRequest request) throws IOException {
         ExcelResponse response = new ExcelResponse();
+        String fileID = excelService.createOneSheet(request);
+        response.setFileId("test");
+        response.setMessage("testMsg");
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/excel/auto")
     @ApiOperation("Generate Multi-Sheet Excel Using Split field")
-    public ResponseEntity<ExcelResponse> createMultiSheetExcel(@RequestBody @Validated MultiSheetExcelRequest request) {
+    public ResponseEntity<ExcelResponse> createMultiSheetExcel(@RequestBody @Validated MultiSheetExcelRequest request) throws IOException {
         ExcelResponse response = new ExcelResponse();
-
+        String fileID = excelService.createMultiSheet(request);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
@@ -51,6 +55,8 @@ public class ExcelGenerationController {
     @ApiOperation("List all existing files")
     public ResponseEntity<List<ExcelResponse>> listExcels() {
         var response = new ArrayList<ExcelResponse>();
+        excelService.getAll();
+
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
@@ -66,6 +72,7 @@ public class ExcelGenerationController {
     @DeleteMapping("/excel/{id}")
     public ResponseEntity<ExcelResponse> deleteExcel(@PathVariable String id) {
         var response = new ExcelResponse();
+        excelService.delete(id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 }

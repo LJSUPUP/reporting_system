@@ -1,6 +1,9 @@
 package com.antra.evaluation.reporting_system.pojo.report;
 
 
+import com.antra.evaluation.reporting_system.pojo.api.ExcelRequest;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class ExcelDataSheet {
@@ -31,4 +34,6 @@ public class ExcelDataSheet {
     public void setDataRows(List<List<Object>> dataRows) {
         this.dataRows = dataRows;
     }
+    public ExcelDataSheet(){}
+
 }
