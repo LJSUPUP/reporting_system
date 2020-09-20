@@ -1,12 +1,31 @@
 package com.antra.evaluation.reporting_system.pojo.api;
 
+import com.antra.evaluation.reporting_system.pojo.report.ExcelFile;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class ExcelResponse<T> {
+
+
+    private String message;
+    private int totalFiles;
+    private List<ExcelVO> files;
 
     public ExcelResponse(){
         super();
+        files = new ArrayList<>();
     }
 
-    private String message;
+    public int getTotalFiles() {
+        return totalFiles;
+    }
+
+    public List<ExcelVO> getFiles() {
+        return files;
+    }
+
+
 
     public String getMessage() {
         return message;
@@ -16,14 +35,15 @@ public class ExcelResponse<T> {
         this.message = message;
     }
 
-    private String fileId;
-
-    public String getFileId() {
-        return fileId;
+    public void setFiles(List<ExcelVO> files) {
+        this.files = files;
+    }
+    public void updateBody(ExcelVO t) {
+        files.add(t);
+    }
+    public void setTotalFiles(int totalFiles) {
+        this.totalFiles = totalFiles;
     }
 
-    public void setFileId(String fileId) {
-        this.fileId = fileId;
-    }
 
 }

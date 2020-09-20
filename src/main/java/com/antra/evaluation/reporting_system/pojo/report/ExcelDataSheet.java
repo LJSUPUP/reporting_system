@@ -1,39 +1,16 @@
 package com.antra.evaluation.reporting_system.pojo.report;
 
-
-import com.antra.evaluation.reporting_system.pojo.api.ExcelRequest;
-
-import java.util.ArrayList;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.util.List;
-
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class ExcelDataSheet {
     private String title;
     private List<ExcelDataHeader> headers;
     private List<List<Object>> dataRows;
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public List<ExcelDataHeader> getHeaders() {
-        return headers;
-    }
-
-    public void setHeaders(List<ExcelDataHeader> headers) {
-        this.headers = headers;
-    }
-
-    public List<List<Object>> getDataRows() {
-        return dataRows;
-    }
-
-    public void setDataRows(List<List<Object>> dataRows) {
-        this.dataRows = dataRows;
-    }
-    public ExcelDataSheet(){}
-
 }

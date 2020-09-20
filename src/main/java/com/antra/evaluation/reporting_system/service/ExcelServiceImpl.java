@@ -4,6 +4,8 @@ import com.antra.evaluation.reporting_system.pojo.api.ExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.api.MultiSheetExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.report.*;
 import com.antra.evaluation.reporting_system.repo.ExcelRepository;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -71,27 +73,36 @@ public class ExcelServiceImpl implements ExcelService {
 
 
     @Override
-    public List<String> getAll(){
+    public List<ExcelFile> getAll(){
         List<String> res = new ArrayList<>();
         List<ExcelFile> files = excelRepository.getFiles();
+
         for(ExcelFile f: files){
-            res.add(f.getFileId());
+            res.add(String.valueOf(f.getId()));
         }
-        return res;
+        return files;
     }
 
     @Override
-    public InputStream getExcelBodyById(String id) {
+    public InputStream getExcelBodyById(String id){
 
         Optional<ExcelFile> fileInfo = excelRepository.getFileById(id);
-       // if (fileInfo.isPresent()) {
-            File file = new File("temp.xlsx");
+        if(fileInfo.isEmpty()) return null;
+        File file = new File(fileInfo.get().getFileLocation());
+
+//        ByteArrayOutputStream out = new ByteArrayOutputStream();
+//        //创建临时文件
+//        Workbook wb = w
+//        file.write(out);
+//        byte [] bookByteAry = out.toByteArray();
+//        in = new ByteArrayInputStream(bookByteAry);
             try {
+                //System.out.println(file.getName());
                 return new FileInputStream(file);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
-      //  }
+
         return null;
     }
     @Override
@@ -131,7 +142,14 @@ public class ExcelServiceImpl implements ExcelService {
         }
         return dataHeaders;
     }
-
+    @Override
+    public String getExcelNameById(String id){
+        return excelRepository.getNameById(id);
+    }
+    @Override
+    public String getExcelLocation(String id){
+        return excelRepository.getLocationById(id);
+    }
     private String generateShortUuid() {
         StringBuilder shortBuffer = new StringBuilder();
         String uuid = UUID.randomUUID().toString().replace("-", "");
@@ -151,13 +169,15 @@ public class ExcelServiceImpl implements ExcelService {
         // init excel file meta data
         ExcelFile excelFile = new ExcelFile();
         // id and file name
-        excelFile.setFileId(fileId);
+        excelFile.setId(fileId);
         excelFile.setGeneratedTime(LocalDateTime.now());
         excelFile.setSubmitter(data.getSubmitter());
         File file = excelGenerationService.generateExcelReport(data);
         excelFile.setFileName(file.getName());
         excelFile.setFileSize(file.length());
         excelFile.setFileLocation(file.getAbsolutePath());
+        excelFile.setDescription(data.getTitle());
+
 
         // save excel file
         excelRepository.saveFile(excelFile);

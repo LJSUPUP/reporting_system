@@ -22,8 +22,8 @@ public class ExcelRepositoryImpl implements ExcelRepository {
 
     @Override
     public ExcelFile saveFile(ExcelFile file) {
-        excelData.put(file.getFileId(),file);
-        System.out.println(file.getFileId());
+        excelData.put(String.valueOf(file.getId()),file);
+        System.out.println(file.getId());
         return null;
     }
 
@@ -43,7 +43,24 @@ public class ExcelRepositoryImpl implements ExcelRepository {
 
     @Override
     public List<ExcelFile> getFiles() {
+
         return List.copyOf(excelData.values());
+    }
+
+    @Override
+    public String getNameById(String id){
+        if(!excelData.containsKey(id)){
+            return null;
+        }
+        return excelData.get(id).getFileName();
+    }
+
+    @Override
+    public String getLocationById(String id){
+        if(!excelData.containsKey(id)){
+            return null;
+        }
+        return excelData.get(id).getFileLocation();
     }
 }
 

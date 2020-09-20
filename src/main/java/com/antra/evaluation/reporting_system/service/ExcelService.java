@@ -5,6 +5,7 @@ import com.antra.evaluation.reporting_system.pojo.api.MultiSheetExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelData;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelDataHeader;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelDataSheet;
+import com.antra.evaluation.reporting_system.pojo.report.ExcelFile;
 import io.swagger.models.auth.In;
 
 import java.io.IOException;
@@ -15,7 +16,9 @@ public interface ExcelService {
     InputStream getExcelBodyById(String id);
     String createOneSheet (ExcelRequest excelRequest) throws IOException;
     String createMultiSheet (MultiSheetExcelRequest excelRequest) throws IOException;
-    List<String> getAll();
+    String getExcelNameById(String id);
+    String getExcelLocation(String id);
+    List<ExcelFile> getAll();
     boolean delete(String id);
 
 /*    void fillSheet(ExcelDataSheet sheet, List<List<String>> rawData);
