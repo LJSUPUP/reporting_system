@@ -21,4 +21,5 @@ public class ExcelData {
     private List<String> headers;
     private List<List<String>> dataBody;
     private String submitter;
+    private String splitBy;
 }

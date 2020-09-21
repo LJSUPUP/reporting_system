@@ -1,10 +1,9 @@
 package com.antra.evaluation.reporting_system;
 
-import com.antra.evaluation.reporting_system.pojo.report.ExcelData;
-import com.antra.evaluation.reporting_system.pojo.report.ExcelDataHeader;
-import com.antra.evaluation.reporting_system.pojo.report.ExcelDataSheet;
-import com.antra.evaluation.reporting_system.pojo.report.ExcelDataType;
+import com.antra.evaluation.reporting_system.pojo.api.ExcelRequest;
+import com.antra.evaluation.reporting_system.pojo.report.*;
 import com.antra.evaluation.reporting_system.service.ExcelGenerationService;
+import com.antra.evaluation.reporting_system.service.ExcelService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,9 +21,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ReportingSystemApplicationTests {
 
     @Autowired
-    ExcelGenerationService reportService;
+    ExcelService excelService;
 
     ExcelData data = new ExcelData();
+
 
     @BeforeEach // We are using JUnit 5, @Before is replaced by @BeforeEach
     public void setUpData() {
@@ -70,13 +71,37 @@ class ReportingSystemApplicationTests {
     }
 
     @Test
-    public void testExcelGegeration() {
+    public void testExcelGeneration () throws Exception {
         File file = null;
         try {
-            file = reportService.generateExcelReport(data);
+            file = new File(excelService.createExcelFile(data));
         } catch (IOException e) {
             e.printStackTrace();
         }
         assertTrue(file != null);
+    }
+
+    @Test
+    public void testDeleteFileById() throws Exception{
+        String fileId = excelService.createExcelFile(data);
+        Boolean res1 = excelService.delete(fileId);
+        assertTrue(res1);
+    }
+
+    @Test
+    public void testGetFileById() throws Exception{
+        String fileId = excelService.createExcelFile(data);
+        String name = excelService.getExcelNameById(fileId);
+        assertTrue(name!=null);
+
+    }
+
+
+    @Test
+    public void testGetBodyById() throws Exception{
+        String fileId = excelService.createExcelFile(data);
+        InputStream fis = excelService.getExcelBodyById(fileId);
+        assertTrue(fis!=null);
+
     }
 }

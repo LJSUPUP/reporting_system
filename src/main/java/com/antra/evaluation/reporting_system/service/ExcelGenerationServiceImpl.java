@@ -1,8 +1,10 @@
 package com.antra.evaluation.reporting_system.service;
 
+import com.antra.evaluation.reporting_system.exception.InvalidDataException;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelData;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelDataHeader;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelDataSheet;
+import lombok.Synchronized;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -30,19 +32,19 @@ import java.util.List;
 @Service
 public class ExcelGenerationServiceImpl implements ExcelGenerationService {
 
-    private void validateData(ExcelData data) {
+    private void validateData(ExcelData data) throws Exception {
         if (data.getSheets().size() < 1) {
-            throw new RuntimeException("Excel Data Error: no sheet is defined");
+            throw new InvalidDataException("Excel Data Error: no sheet is defined");
         }
         for (ExcelDataSheet sheet : data.getSheets()) {
             if (StringUtils.isEmpty(sheet.getTitle())) {
-                throw new RuntimeException("Excel Data Error: sheet name is missing");
+                throw new InvalidDataException("Excel Data Error: sheet name is missing");
             }
             if(sheet.getHeaders() != null) {
                 int columns = sheet.getHeaders().size();
                 for (List<Object> dataRow : sheet.getDataRows()) {
                     if (dataRow.size() != columns) {
-                        throw new RuntimeException("Excel Data Error: sheet data has difference length than header number");
+                        throw new InvalidDataException("Excel Data Error: sheet data has difference length than header number");
                     }
                 }
             }
@@ -50,7 +52,7 @@ public class ExcelGenerationServiceImpl implements ExcelGenerationService {
     }
 
     @Override
-    public File generateExcelReport(ExcelData data) throws IOException {
+    public File generateExcelReport(ExcelData data) throws Exception {
         validateData(data);
         XSSFWorkbook workbook = new XSSFWorkbook();
 
@@ -104,15 +106,18 @@ public class ExcelGenerationServiceImpl implements ExcelGenerationService {
 
         File currDir = new File(".");
         String path = currDir.getAbsolutePath();
-        String fileName = data.getTitle().substring(0,12);
+        int l = data.getTitle().length();
+        if(l>12)
+            l=12;
+        String fileName = data.getTitle().substring(0,l);
         String fileLocation = path.substring(0, path.length() - 1) + fileName+ ".xlsx";
         File file = new File(fileLocation);
-
-        for (int i = 1; file.exists() && i < Integer.MAX_VALUE; i++) {
-            fileLocation = path.substring(0, path.length() - 1)+ fileName + '(' + i + ')' +  ".xlsx";
-            file = new File(fileLocation);
+        synchronized(this) {
+            for (int i = 1; file.exists() && i < Integer.MAX_VALUE; i++) {
+                fileLocation = path.substring(0, path.length() - 1) + fileName + '(' + i + ')' + ".xlsx";
+                file = new File(fileLocation);
+            }
         }
-
         FileOutputStream outputStream = new FileOutputStream(fileLocation);
         workbook.write(outputStream);
         try {

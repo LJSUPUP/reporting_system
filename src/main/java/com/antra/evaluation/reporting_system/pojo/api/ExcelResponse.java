@@ -7,25 +7,28 @@ import java.util.List;
 
 public class ExcelResponse<T> {
 
-
+    private Integer code = 200;
     private String message;
-    private int totalFiles;
-    private List<ExcelVO> files;
-
+    private Boolean success = true;
+    private List<ExcelVO> data;
     public ExcelResponse(){
         super();
-        files = new ArrayList<>();
     }
-
-    public int getTotalFiles() {
-        return totalFiles;
-    }
-
-    public List<ExcelVO> getFiles() {
-        return files;
+    public ExcelResponse(List<ExcelVO> l){
+        this.data = l;
     }
 
 
+
+    public ExcelResponse(Boolean success, ResultCode resultCode){
+        this.success = success;
+        this.code = resultCode.getCode();
+        this.message = resultCode.getMessage();
+    }
+
+    public List<ExcelVO> getData() {
+        return data;
+    }
 
     public String getMessage() {
         return message;
@@ -35,15 +38,18 @@ public class ExcelResponse<T> {
         this.message = message;
     }
 
-    public void setFiles(List<ExcelVO> files) {
-        this.files = files;
+    public void setData(List<ExcelVO> files) {
+        this.data = files;
     }
     public void updateBody(ExcelVO t) {
-        files.add(t);
+        data.add(t);
     }
-    public void setTotalFiles(int totalFiles) {
-        this.totalFiles = totalFiles;
+    public Integer getCode() {
+        return code;
     }
 
+    public Boolean getSuccess() {
+        return success;
+    }
 
 }

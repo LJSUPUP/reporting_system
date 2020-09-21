@@ -1,5 +1,6 @@
 package com.antra.evaluation.reporting_system.service;
 
+import com.antra.evaluation.reporting_system.exception.FileNotExitException;
 import com.antra.evaluation.reporting_system.pojo.api.ExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.api.MultiSheetExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelData;
@@ -13,15 +14,11 @@ import java.io.InputStream;
 import java.util.List;
 
 public interface ExcelService {
-    InputStream getExcelBodyById(String id);
-    String createOneSheet (ExcelRequest excelRequest) throws IOException;
-    String createMultiSheet (MultiSheetExcelRequest excelRequest) throws IOException;
+    InputStream getExcelBodyById(String id) throws FileNotExitException;
+    String createOneSheet (ExcelRequest excelRequest) throws Exception;
+    String createMultiSheet (MultiSheetExcelRequest excelRequest) throws Exception;
     String getExcelNameById(String id);
-    String getExcelLocation(String id);
     List<ExcelFile> getAll();
-    boolean delete(String id);
-
-/*    void fillSheet(ExcelDataSheet sheet, List<List<String>> rawData);
-    void fillSheetByPartition(ExcelDataSheet sheet, List<List<String>> rawData, List<Integer> indices);
-    }*/
+    String createExcelFile(ExcelData data) throws Exception;
+    boolean delete(String id) throws FileNotExitException;
 }

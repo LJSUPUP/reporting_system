@@ -1,5 +1,7 @@
 package com.antra.evaluation.reporting_system.endpoint;
 
+import com.antra.evaluation.reporting_system.exception.FileNotExitException;
+import com.antra.evaluation.reporting_system.exception.InvalidDataException;
 import com.antra.evaluation.reporting_system.pojo.api.*;
 import com.antra.evaluation.reporting_system.pojo.report.ExcelFile;
 import com.antra.evaluation.reporting_system.service.ExcelService;
@@ -9,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -28,39 +31,53 @@ public class ExcelGenerationController {
 
     ExcelService excelService;
 
+
     @Autowired
     public ExcelGenerationController(ExcelService excelService) {
         this.excelService = excelService;
     }
 
-    @PostMapping("/excel")
+    @PostMapping(value = "/excel", headers = "Accept=application/json", produces = "application/json")
     @ApiOperation("Generate Excel")
-    public ResponseEntity<CreateResponse> createExcel(@RequestBody @Validated ExcelRequest request) throws IOException {
-        CreateResponse response = new CreateResponse();
+    @Transactional
+    public synchronized ResponseEntity<ExcelResponse> createExcel(@RequestBody @Validated ExcelRequest request) throws Exception{
+        ExcelResponse response;
         String fileID = excelService.createOneSheet(request);
-        response.setMessage("create successfully");
-        response.getFileIds().add(fileID);
+        if(fileID == null){
+            response = new ExcelResponse<>(false,ResultCode.SERVER_ERROR);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        response = new ExcelResponse(true, ResultCode.SUCCESS);
+        response.setMessage("create file: "+ fileID);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @PostMapping("/excel/auto")
     @ApiOperation("Generate Multi-Sheet Excel Using Split field")
-    public ResponseEntity<CreateResponse> createMultiSheetExcel(@RequestBody @Validated MultiSheetExcelRequest request) throws IOException {
-        CreateResponse response = new CreateResponse();
+    @Transactional
+    public synchronized ResponseEntity<ExcelResponse> createMultiSheetExcel(@RequestBody @Validated MultiSheetExcelRequest request) throws Exception {
+        ExcelResponse response;
         String fileID = excelService.createMultiSheet(request);
-        response.setMessage("create successfully");
-        response.getFileIds().add(fileID);
+        if(fileID == null){
+            response = new ExcelResponse<>(false,ResultCode.SERVER_ERROR);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        response = new ExcelResponse(true, ResultCode.SUCCESS);
+        response.setMessage("create file: "+ fileID);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
     @GetMapping("/excel")
     @ApiOperation("List all existing files")
-    public ResponseEntity<ExcelResponse<ExcelFile>> listExcels() {
-        var response = new ExcelResponse<ExcelFile>();
+    public ResponseEntity<ExcelResponse<ExcelFile>> listExcels() throws Exception{
+        ExcelResponse response = null;
         List<ExcelFile> files = excelService.getAll();
-        response.setMessage("getAll");
-
-        response.setFiles(files.stream().map(excelFile -> ExcelVO.builder()
+        if(files.size()==0){
+            response = new ExcelResponse<>(false,ResultCode.NOT_FOUND);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }
+        response = new ExcelResponse(true,ResultCode.SUCCESS);
+        response.setData(files.stream().map(excelFile -> ExcelVO.builder()
                 .fileId(excelFile.getId())
                 .fileName(excelFile.getFileName())
                 .description(excelFile.getDescription())
@@ -68,15 +85,18 @@ public class ExcelGenerationController {
                 .submitter(excelFile.getSubmitter())
                 .generatedTime(excelFile.getGeneratedTime())
                 .build()).collect(Collectors.toList()));
-        response.setTotalFiles(files.size());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping(value = "/excel/{id}/content", headers = "Accept=application/octet-stream", produces = "application/octet-stream")
+    @GetMapping(value = "/excel/{id}/content")
     @ApiOperation(value = "download a file")
-    public void downloadExcel(@PathVariable String id, HttpServletResponse response) throws IOException {
-        InputStream fis = excelService.getExcelBodyById(id);
+    @Transactional
+    public void downloadExcel(@PathVariable String id, HttpServletResponse response) throws Exception {
         String FileName = excelService.getExcelNameById(id);
+        if(FileName == null){
+            return;
+        }
+        InputStream fis = excelService.getExcelBodyById(id);
 
         response.setCharacterEncoding("UTF-8");
 
@@ -91,33 +111,41 @@ public class ExcelGenerationController {
     }
 
     @DeleteMapping("/excel/{id}")
-    public ResponseEntity<ExcelResponse> deleteExcel(@PathVariable String id) {
+    @Transactional
+    public synchronized ResponseEntity<ExcelResponse> deleteExcel(@PathVariable String id) throws Exception{
         var response = new ExcelResponse();
-        excelService.delete(id);
+        boolean success = excelService.delete(id);
+        if(!success){
+            response = new ExcelResponse<>(false,ResultCode.SERVER_ERROR);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+            //throw new FileNotExitException("Cannot delete excel file");
+        }
+        response = new ExcelResponse(true, ResultCode.SUCCESS);
+        response.setMessage("delete file: "+ id);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @PostMapping(value = "/excel/batch")
+    @PostMapping("/excel/batch")
     @ApiOperation("Generate Multi Excels")
-    public ResponseEntity<CreateResponse> createMultiExcels(@RequestBody @Validated MultiSheetExcelRequest[] requests) throws IOException {
-        CreateResponse response = new CreateResponse();
-
-        response.setMessage("create successfully");
-
+    @Transactional
+    public ResponseEntity<ExcelResponse> createMultiExcels(@RequestBody @Validated MultiSheetExcelRequest[] requests) throws Exception {
+        ExcelResponse response = new ExcelResponse(true,ResultCode.SUCCESS);
+        response.setMessage("create files:");
         for (MultiSheetExcelRequest request : requests) {
             String fileId = null;
             if (request.getSplitBy() == null)
                 fileId = excelService.createOneSheet(request);
             else
                 fileId = excelService.createMultiSheet(request);
-            response.getFileIds().add(fileId);
+            response.setMessage(response.getMessage()+" "+fileId);
         }
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping(value = "/excel/batch/content/{ids}")
+    @GetMapping("/excel/{ids}/content/batch")
     @ApiOperation(value = "download multi files")
-    public void downloadMultiExcel(@PathVariable String ids,HttpServletResponse response) throws IOException {
+    @Transactional
+    public void downloadMultiExcel(@PathVariable String ids,HttpServletResponse response) throws IOException, FileNotExitException {
         response.setHeader("Content-Disposition", "attachment;filename=" + LocalDate.now().toString()+".zip");  // 需要编码否则中文乱码
         response.setHeader("ContentType","application/zip");
         response.setCharacterEncoding("UTF-8");
@@ -125,7 +153,6 @@ public class ExcelGenerationController {
         ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream());
         for(String id:str){
             String fileLocation = excelService.getExcelNameById(id);
-            System.out.println(fileLocation);
             ZipEntry zipEntryXtv = new ZipEntry(fileLocation);
             zipOutputStream.putNextEntry(zipEntryXtv);
             InputStream fis = excelService.getExcelBodyById(id);
@@ -138,7 +165,5 @@ public class ExcelGenerationController {
         }
         zipOutputStream.close();
     }
+
 }
-// Log
-// Exception handling
-// Validation

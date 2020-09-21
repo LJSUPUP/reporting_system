@@ -1,5 +1,7 @@
 package com.antra.evaluation.reporting_system.service;
 
+import com.antra.evaluation.reporting_system.exception.FileNotExitException;
+import com.antra.evaluation.reporting_system.exception.InvalidDataException;
 import com.antra.evaluation.reporting_system.pojo.api.ExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.api.MultiSheetExcelRequest;
 import com.antra.evaluation.reporting_system.pojo.report.*;
@@ -22,6 +24,7 @@ public class ExcelServiceImpl implements ExcelService {
     @Autowired
     ExcelGenerationService excelGenerationService;
 
+
     private static String[] digits = new String[] { "a", "b", "c", "d", "e", "f",
             "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
             "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5",
@@ -30,7 +33,7 @@ public class ExcelServiceImpl implements ExcelService {
             "W", "X", "Y", "Z" };
 
     @Override
-    public String createOneSheet(ExcelRequest excelRequest) throws IOException {
+    public String createOneSheet(ExcelRequest excelRequest) throws Exception {
         ExcelData data = new ExcelData();
         initExcelData(excelRequest, data);
         List<ExcelDataHeader> headers = transHeaders(excelRequest.getHeaders());
@@ -41,16 +44,21 @@ public class ExcelServiceImpl implements ExcelService {
         data.getSheets().add(sheet);
         String fileId = null;
         fileId = createExcelFile(data);
+        if(fileId==null){
+            throw new InvalidDataException("cannot generate excel file");
+        }
         return fileId;
     }
 
     @Override
-    public String createMultiSheet(MultiSheetExcelRequest excelRequest) throws IOException {
+    public String createMultiSheet(MultiSheetExcelRequest excelRequest) throws Exception {
         ExcelData data = new ExcelData();
         initExcelData(excelRequest, data);
         List<ExcelDataHeader> headers = transHeaders(excelRequest.getHeaders());
         Map<String, List<Integer>> map = new HashMap<>();
         int index = excelRequest.getHeaders().indexOf(excelRequest.getSplitBy());
+        if(index==-1)
+            throw new InvalidDataException("Excel Data Error: invalid splitBy parameter");
         int pointer = 0;
         for(List<String> dataRow: excelRequest.getData()){
             String partition = dataRow.get(index);
@@ -68,6 +76,8 @@ public class ExcelServiceImpl implements ExcelService {
         }
         String fileId = null;
         fileId = createExcelFile(data);
+        if(fileId == null)
+            throw new InvalidDataException("cannot generate excel file");
         return fileId;
     }
 
@@ -84,20 +94,14 @@ public class ExcelServiceImpl implements ExcelService {
     }
 
     @Override
-    public InputStream getExcelBodyById(String id){
+    public InputStream getExcelBodyById(String id) throws FileNotExitException {
 
         Optional<ExcelFile> fileInfo = excelRepository.getFileById(id);
-        if(fileInfo.isEmpty()) return null;
+        if(fileInfo.isEmpty()){
+            throw new FileNotExitException("cannot get excel file:"+id);
+        }
         File file = new File(fileInfo.get().getFileLocation());
-
-//        ByteArrayOutputStream out = new ByteArrayOutputStream();
-//        //创建临时文件
-//        Workbook wb = w
-//        file.write(out);
-//        byte [] bookByteAry = out.toByteArray();
-//        in = new ByteArrayInputStream(bookByteAry);
             try {
-                //System.out.println(file.getName());
                 return new FileInputStream(file);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
@@ -106,7 +110,10 @@ public class ExcelServiceImpl implements ExcelService {
         return null;
     }
     @Override
-    public boolean delete(String id){
+    public boolean delete(String id) throws FileNotExitException {
+        if(excelRepository.getNameById(id)==null){
+            throw new FileNotExitException("cannot delete excel file:"+id);
+        }
         excelRepository.deleteFile(id);
         return true;
 
@@ -117,6 +124,7 @@ public class ExcelServiceImpl implements ExcelService {
         data.setGeneratedTime(LocalDateTime.now());
         data.setTitle(excelRequest.getDescription());
         data.setSubmitter(excelRequest.getSubmitter());
+        data.setSplitBy(excelRequest.getSplitBy());
     }
 
     private void fillSheet(ExcelDataSheet sheet, List<List<String>> rawData){
@@ -146,10 +154,6 @@ public class ExcelServiceImpl implements ExcelService {
     public String getExcelNameById(String id){
         return excelRepository.getNameById(id);
     }
-    @Override
-    public String getExcelLocation(String id){
-        return excelRepository.getLocationById(id);
-    }
     private String generateShortUuid() {
         StringBuilder shortBuffer = new StringBuilder();
         String uuid = UUID.randomUUID().toString().replace("-", "");
@@ -161,7 +165,8 @@ public class ExcelServiceImpl implements ExcelService {
         return shortBuffer.toString();
     }
 
-    private String createExcelFile(ExcelData data) throws IOException {
+    @Override
+    public String createExcelFile(ExcelData data) throws Exception {
         String fileId = generateShortUuid();
         while(!excelRepository.getFileById(fileId).isEmpty()){
             fileId = generateShortUuid();

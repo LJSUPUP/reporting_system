@@ -23,7 +23,6 @@ public class ExcelRepositoryImpl implements ExcelRepository {
     @Override
     public ExcelFile saveFile(ExcelFile file) {
         excelData.put(String.valueOf(file.getId()),file);
-        System.out.println(file.getId());
         return null;
     }
 
