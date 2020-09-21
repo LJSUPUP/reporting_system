@@ -10,6 +10,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
 import java.time.LocalDateTime;
@@ -33,6 +34,7 @@ public class ExcelServiceImpl implements ExcelService {
             "W", "X", "Y", "Z" };
 
     @Override
+    @Transactional
     public String createOneSheet(ExcelRequest excelRequest) throws Exception {
         ExcelData data = new ExcelData();
         initExcelData(excelRequest, data);
@@ -51,6 +53,7 @@ public class ExcelServiceImpl implements ExcelService {
     }
 
     @Override
+    @Transactional
     public String createMultiSheet(MultiSheetExcelRequest excelRequest) throws Exception {
         ExcelData data = new ExcelData();
         initExcelData(excelRequest, data);
@@ -110,6 +113,7 @@ public class ExcelServiceImpl implements ExcelService {
         return null;
     }
     @Override
+    @Transactional
     public boolean delete(String id) throws FileNotExitException {
         if(excelRepository.getNameById(id)==null){
             throw new FileNotExitException("cannot delete excel file:"+id);
@@ -166,6 +170,7 @@ public class ExcelServiceImpl implements ExcelService {
     }
 
     @Override
+    @Transactional
     public String createExcelFile(ExcelData data) throws Exception {
         String fileId = generateShortUuid();
         while(!excelRepository.getFileById(fileId).isEmpty()){
