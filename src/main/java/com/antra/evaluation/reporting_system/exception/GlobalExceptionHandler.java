@@ -1,7 +1,6 @@
 package com.antra.evaluation.reporting_system.exception;
 
 import com.antra.evaluation.reporting_system.pojo.api.ExcelResponse;
-import com.antra.evaluation.reporting_system.pojo.api.ResultCode;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import lombok.extern.slf4j.Slf4j;
